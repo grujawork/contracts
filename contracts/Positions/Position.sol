@@ -57,19 +57,14 @@ contract Position is IERC20, IPosition {
 
     function allowance(address owner, address spender) external view override returns (uint256) {
         if (spender == limitOrderProvider || spender == thalesAMM) {
-            return 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+            return type(uint256).max;
         } else {
             return allowances[owner][spender];
         }
     }
 
-    function _requireMinimumAmount(uint amount) internal pure returns (uint) {
-        require(amount >= _MINIMUM_AMOUNT || amount == 0, "Balance < $0.01");
-        return amount;
-    }
-
     function mint(address minter, uint amount) external onlyMarket {
-        _requireMinimumAmount(amount);
+        require(amount >= _MINIMUM_AMOUNT || amount == 0, "Balance < $0.01");
         totalSupply = totalSupply.add(amount);
         balanceOf[minter] = balanceOf[minter].add(amount); // Increment rather than assigning since a transfer may have occurred.
 
@@ -155,13 +150,10 @@ contract Position is IERC20, IPosition {
         return true;
     }
 
-    function getBalanceOf(address account) external view override returns (uint) {
-        return balanceOf[account];
-    } 
-
     function getTotalSupply() external view override returns (uint) {
         return totalSupply;
     }
+
     /* ========== MODIFIERS ========== */
 
     modifier onlyMarket() {

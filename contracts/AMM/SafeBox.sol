@@ -11,7 +11,7 @@ contract SafeBox is ProxyOwned, Initializable {
     using SafeERC20 for IERC20;
     IERC20 public sUSD;
 
-    function initialize(address _owner, IERC20 _sUSD) public initializer {
+    function initialize(address _owner, IERC20 _sUSD) external initializer {
         setOwner(_owner);
         sUSD = _sUSD;
     }

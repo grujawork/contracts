@@ -15,7 +15,7 @@ interface IPositionalMarket {
 
     function getOptions() external view returns (IPosition up, IPosition down);
 
-    function times() external view returns (uint maturity, uint destructino);
+    function times() external view returns (uint maturity, uint expiry);
 
     function getOracleDetails()
         external

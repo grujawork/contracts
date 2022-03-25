@@ -259,16 +259,19 @@ contract('ThalesAMM', accounts => {
 			);
 			console.log('sellPriceImpact decimal is:' + sellPriceImpact / 1e18);
 
+			let priceDown = await thalesAMM.price(newMarket.address, Position.UP);
+			console.log('priceUp decimal is:' + priceDown / 1e18);
+
 			let sellToAmmQuote = await thalesAMM.sellToAmmQuote(
 				newMarket.address,
 				Position.UP,
-				toUnit(availableToSellToAMM / 1e18)
+				toUnit(availableToSellToAMM / 1e18 - 1)
 			);
 			console.log('sellToAmmQuote is ' + sellToAmmQuote / 1e18);
 			await thalesAMM.sellToAMM(
 				newMarket.address,
 				Position.UP,
-				toUnit(availableToSellToAMM / 1e18),
+				toUnit(availableToSellToAMM / 1e18 - 1),
 				sellToAmmQuote,
 				additionalSlippage,
 				{ from: minter }
@@ -296,16 +299,19 @@ contract('ThalesAMM', accounts => {
 			);
 			console.log('sellPriceImpact down decimal is:' + sellPriceImpact / 1e18);
 
+			priceDown = await thalesAMM.price(newMarket.address, Position.UP);
+			console.log('priceUp decimal is:' + priceDown / 1e18);
+
 			sellToAmmQuote = await thalesAMM.sellToAmmQuote(
 				newMarket.address,
 				Position.DOWN,
-				toUnit(availableToSellToAMM / 1e18)
+				toUnit(availableToSellToAMM / 1e18 - 1)
 			);
 			console.log('sellToAmmQuote is ' + sellToAmmQuote / 1e18);
 			await thalesAMM.sellToAMM(
 				newMarket.address,
 				Position.DOWN,
-				toUnit(availableToSellToAMM / 1e18),
+				toUnit(availableToSellToAMM / 1e18 - 1),
 				sellToAmmQuote,
 				additionalSlippage,
 				{ from: minter }

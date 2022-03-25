@@ -193,7 +193,7 @@ contract PositionalMarket is OwnedWithInit, IPositionalMarket {
     /* ---------- Option Balances and Mints ---------- */
 
     function _balancesOf(address account) internal view returns (uint up, uint down) {
-        return (options.up.getBalanceOf(account), options.down.getBalanceOf(account));
+        return (options.up.balanceOf(account), options.down.balanceOf(account));
     }
 
     function balancesOf(address account) external view override returns (uint up, uint down) {
@@ -235,15 +235,13 @@ contract PositionalMarket is OwnedWithInit, IPositionalMarket {
 
     /* ---------- Utilities ---------- */
 
-    function _incrementDeposited(uint value) internal returns (uint _deposited) {
-        _deposited = deposited.add(value);
-        deposited = _deposited;
+    function _incrementDeposited(uint value) internal {
+        deposited = deposited.add(value);
         _manager().incrementTotalDeposited(value);
     }
 
-    function _decrementDeposited(uint value) internal returns (uint _deposited) {
-        _deposited = deposited.sub(value);
-        deposited = _deposited;
+    function _decrementDeposited(uint value) internal {
+        deposited = deposited.sub(value);
         _manager().decrementTotalDeposited(value);
     }
 

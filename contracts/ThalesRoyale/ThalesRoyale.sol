@@ -3,10 +3,8 @@ pragma solidity ^0.8.0;
 
 // external
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
@@ -21,7 +19,6 @@ import "../utils/proxy/solidity-0.8.0/ProxyOwned.sol";
 contract ThalesRoyale is Initializable, ProxyOwned, PausableUpgradeable, ProxyReentrancyGuard {
     /* ========== LIBRARIES ========== */
 
-    using SafeMathUpgradeable for uint;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /* ========== CONSTANTS =========== */
@@ -92,7 +89,7 @@ contract ThalesRoyale is Initializable, ProxyOwned, PausableUpgradeable, ProxyRe
         uint _buyInAmount,
         uint _pauseBetweenSeasonsTime,
         bool _nextSeasonStartsAutomatically
-    ) public initializer {
+    ) external initializer {
         setOwner(_owner);
         initNonReentrant();
         oracleKey = _oracleKey;
@@ -182,6 +179,7 @@ contract ThalesRoyale is Initializable, ProxyOwned, PausableUpgradeable, ProxyRe
 
         // getting price
         uint currentPriceFromOracle = priceFeed.rateForCurrency(oracleKey);
+        require(currentPriceFromOracle > 0, "Oracle Price must be larger than 0");
         uint stikePrice = roundTargetPrice;
 
         finalPricePerRoundPerSeason[season][currentSeasonRound] = currentPriceFromOracle;
@@ -226,14 +224,28 @@ contract ThalesRoyale is Initializable, ProxyOwned, PausableUpgradeable, ProxyRe
 
             royaleSeasonEndTime[season] = block.timestamp;
             // first close previous round then royale
-            emit RoundClosed(season, currentSeasonRound, roundResultPerSeason[season][currentSeasonRound], stikePrice, 
-                            finalPricePerRoundPerSeason[season][currentSeasonRound], eliminatedPerRoundPerSeason[season][currentSeasonRound], numberOfWinners);
+            emit RoundClosed(
+                season,
+                currentSeasonRound,
+                roundResultPerSeason[season][currentSeasonRound],
+                stikePrice,
+                finalPricePerRoundPerSeason[season][currentSeasonRound],
+                eliminatedPerRoundPerSeason[season][currentSeasonRound],
+                numberOfWinners
+            );
             emit RoyaleFinished(season, numberOfWinners, rewardPerWinnerPerSeason[season]);
         } else {
             roundInASeasonStartTime[season] = block.timestamp;
             roundInSeasonEndTime[season] = roundInASeasonStartTime[season] + roundLength;
-            emit RoundClosed(season, currentSeasonRound, roundResultPerSeason[season][currentSeasonRound], stikePrice, 
-                            finalPricePerRoundPerSeason[season][currentSeasonRound], eliminatedPerRoundPerSeason[season][currentSeasonRound], winningPositionsPerRound);
+            emit RoundClosed(
+                season,
+                currentSeasonRound,
+                roundResultPerSeason[season][currentSeasonRound],
+                stikePrice,
+                finalPricePerRoundPerSeason[season][currentSeasonRound],
+                eliminatedPerRoundPerSeason[season][currentSeasonRound],
+                winningPositionsPerRound
+            );
         }
     }
 
@@ -360,7 +372,7 @@ contract ThalesRoyale is Initializable, ProxyOwned, PausableUpgradeable, ProxyRe
         require(seasonFinished[season], "Royale must be finished");
         require(numberOfWinners > 0, "There is no alive players left in Royale");
 
-        rewardPerWinnerPerSeason[season] = rewardPerSeason[season].div(numberOfWinners);
+        rewardPerWinnerPerSeason[season] = rewardPerSeason[season] / numberOfWinners;
     }
 
     function _buyIn(address _sender, uint _amount) internal {
@@ -386,10 +398,10 @@ contract ThalesRoyale is Initializable, ProxyOwned, PausableUpgradeable, ProxyRe
         uint amountSafeBox = 0;
 
         if (safeBoxPercentage > 0) {
-            amountSafeBox = _amount.div(100).mul(safeBoxPercentage);
+            amountSafeBox = (_amount * safeBoxPercentage) / 100;
         }
 
-        uint amountBuyIn = _amount.sub(amountSafeBox);
+        uint amountBuyIn = _amount - amountSafeBox;
 
         return (amountBuyIn, amountSafeBox);
     }
@@ -402,7 +414,7 @@ contract ThalesRoyale is Initializable, ProxyOwned, PausableUpgradeable, ProxyRe
         // set collected -> true
         rewardCollectedPerSeason[_season][_winner] = true;
 
-        unclaimedRewardPerSeason[_season] = unclaimedRewardPerSeason[_season].sub(rewardPerWinnerPerSeason[_season]);
+        unclaimedRewardPerSeason[_season] = unclaimedRewardPerSeason[_season] - rewardPerWinnerPerSeason[_season];
 
         // transfering rewardPerPlayer
         rewardToken.safeTransfer(_winner, rewardPerWinnerPerSeason[_season]);
@@ -470,7 +482,7 @@ contract ThalesRoyale is Initializable, ProxyOwned, PausableUpgradeable, ProxyRe
     }
 
     function setSafeBoxPercentage(uint _safeBoxPercentage) public onlyOwner {
-        require(_safeBoxPercentage >= 0 && _safeBoxPercentage <= 100, "Must be in between 0 and 100 %");
+        require(_safeBoxPercentage <= 100, "Must be in between 0 and 100 %");
         safeBoxPercentage = _safeBoxPercentage;
         emit NewSafeBoxPercentage(_safeBoxPercentage);
     }
@@ -506,7 +518,10 @@ contract ThalesRoyale is Initializable, ProxyOwned, PausableUpgradeable, ProxyRe
     }
 
     modifier seasonCanStart() {
-        require(msg.sender == owner || canSeasonBeAutomaticallyStartedAfterSomePeriod(), "Only owner can start season before pause between two seasons");
+        require(
+            msg.sender == owner || canSeasonBeAutomaticallyStartedAfterSomePeriod(),
+            "Only owner can start season before pause between two seasons"
+        );
         require(seasonFinished[season] || season == 0, "Previous season must be finished");
         _;
     }
@@ -520,7 +535,15 @@ contract ThalesRoyale is Initializable, ProxyOwned, PausableUpgradeable, ProxyRe
     /* ========== EVENTS ========== */
 
     event SignedUp(address user, uint season);
-    event RoundClosed(uint season, uint round, uint result, uint strikePrice, uint finalPrice, uint numberOfEliminatedPlayers, uint numberOfWinningPlayers);
+    event RoundClosed(
+        uint season,
+        uint round,
+        uint result,
+        uint strikePrice,
+        uint finalPrice,
+        uint numberOfEliminatedPlayers,
+        uint numberOfWinningPlayers
+    );
     event TookAPosition(address user, uint season, uint round, uint position);
     event RoyaleStarted(uint season, uint totalPlayers, uint totalReward);
     event RoyaleFinished(uint season, uint numberOfWinners, uint rewardPerWinner);

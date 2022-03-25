@@ -472,7 +472,7 @@ contract ThalesRoyalePrivateRoom is Initializable, ProxyOwned, PausableUpgradeab
         uint amountSafeBox = 0;
 
         if (safeBoxPercentage > 0) {
-            amountSafeBox = _amount.div(100).mul(safeBoxPercentage);
+            amountSafeBox = _amount.mul(safeBoxPercentage).div(100);
         }
 
         uint amountBuyIn = _amount.sub(amountSafeBox);

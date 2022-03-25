@@ -78,7 +78,7 @@ contract ThalesRoyalePass is ERC721URIStorage, Ownable {
 
     /* ========== VIEW ========== */
 
-    function pricePaidForPass(uint tokenId) public view returns (uint) {
+    function pricePaidForPass(uint tokenId) external view returns (uint) {
         return pricePerPass[tokenId];
     }
 
@@ -90,22 +90,22 @@ contract ThalesRoyalePass is ERC721URIStorage, Ownable {
 
     /* ========== CONTRACT MANAGEMENT ========== */
 
-    function setPriceForPass(uint _price) public onlyOwner {
+    function setPriceForPass(uint _price) external onlyOwner {
         price = _price;
         emit NewPriceForPass(_price);
     }
 
-    function setTokenUri(string memory _tokenURI) public onlyOwner {
+    function setTokenUri(string memory _tokenURI) external onlyOwner {
         tokenURI = _tokenURI;
         emit NewTokenUri(_tokenURI);
     }
 
-    function setPause(bool _state) public onlyOwner {
+    function setPause(bool _state) external onlyOwner {
         paused = _state;
         emit ThalesRoyalePassPaused(_state);
     }
 
-    function setThalesRoyaleAddress(address _thalesRoyaleAddress) public onlyOwner {
+    function setThalesRoyaleAddress(address _thalesRoyaleAddress) external onlyOwner {
         thalesRoyaleAddress = _thalesRoyaleAddress;
         emit NewThalesRoyaleAddress(_thalesRoyaleAddress);
     }

@@ -124,7 +124,7 @@ contract PositionalMarketManager is Initializable, ProxyOwned, ProxyPausable, IP
         return _activeMarkets.contains(candidate) || _maturedMarkets.contains(candidate);
     }
 
-    function isActiveMarket(address candidate) public view override returns (bool) {
+    function isActiveMarket(address candidate) external view override returns (bool) {
         return _activeMarkets.contains(candidate);
     }
 
