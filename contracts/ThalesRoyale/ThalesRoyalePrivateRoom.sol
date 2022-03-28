@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 // external
@@ -679,7 +680,6 @@ contract ThalesRoyalePrivateRoom is Initializable, ProxyOwned, PausableUpgradeab
     }
 
     function deleteRoom(uint _roomNumber) public canChangeRoomVariables(_roomNumber) {
-        require(roomPublished[_roomNumber], "Already deleted");
 
         roomPublished[_roomNumber] = false;
         rewardToken.safeTransfer(msg.sender, buyInPerPlayerRerRoom[_roomNumber]);

@@ -2,10 +2,10 @@
 pragma solidity ^0.8.0;
 
 // external
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
 // interfaces
@@ -440,8 +440,6 @@ contract ThalesRoyale is Initializable, ProxyOwned, PausableUpgradeable, ProxyRe
         require(_amount > 0, "Amount must be more then zero");
         require(_season >= season, "Cant put funds in a past");
         require(!seasonFinished[_season], "Season is finished");
-        require(rewardToken.allowance(msg.sender, address(this)) >= _amount, "No allowance.");
-        require(rewardToken.balanceOf(msg.sender) >= _amount, "No enough sUSD for buy in");
 
         _putFunds(msg.sender, _amount, _season);
     }

@@ -29,9 +29,6 @@ contract ThalesAMM is ProxyOwned, ProxyPausable, ProxyReentrancyGuard, Initializ
     uint private constant ONE = 1e18;
     uint private constant ONE_PERCENT = 1e16;
 
-    uint private constant MIN_SUPPORTED_PRICE = 10e16;
-    uint private constant MAX_SUPPORTED_PRICE = 90e16;
-
     IPriceFeed public priceFeed;
     IERC20Upgradeable public sUSD;
     address public manager;
@@ -43,11 +40,6 @@ contract ThalesAMM is ProxyOwned, ProxyPausable, ProxyReentrancyGuard, Initializ
     mapping(bytes32 => uint) public impliedVolatilityPerAsset;
 
     uint public minimalTimeLeftToMaturity;
-
-    struct MarketSkew {
-        uint ups;
-        uint downs;
-    }
 
     enum Position {Up, Down}
 
@@ -86,7 +78,7 @@ contract ThalesAMM is ProxyOwned, ProxyPausable, ProxyReentrancyGuard, Initializ
         if (isMarketInAMMTrading(market)) {
             uint basePrice = price(market, position);
             // ignore extremes
-            if (basePrice <= minSupportedPrice || basePrice >= maxSupportedPrice) {
+            if (basePrice < minSupportedPrice || basePrice > maxSupportedPrice) {
                 return 0;
             }
             uint balance = _balanceOfPositionOnMarket(market, position);

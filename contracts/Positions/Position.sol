@@ -137,8 +137,10 @@ contract Position is IERC20, IPosition {
     ) external override returns (bool success) {
         if (msg.sender != limitOrderProvider && msg.sender != thalesAMM) {
             uint fromAllowance = allowances[_from][msg.sender];
-            require(_value <= fromAllowance, "Insufficient allowance");
-            allowances[_from][msg.sender] = fromAllowance.sub(_value);
+            if (fromAllowance < type(uint).max) {
+                require(_value <= fromAllowance, "Insufficient allowance");
+                allowances[_from][msg.sender] = fromAllowance.sub(_value);
+            }
         }
         return _transfer(_from, _to, _value);
     }

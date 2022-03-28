@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+//external
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
 // Inheritance
 import "../interfaces/IPositionalMarketManager.sol";
 import "../utils/proxy/solidity-0.8.0/ProxyOwned.sol";
@@ -16,11 +21,11 @@ import "./PositionalMarket.sol";
 import "./Position.sol";
 import "../interfaces/IPositionalMarket.sol";
 import "../interfaces/IPriceFeed.sol";
-import "@openzeppelin/contracts-4.4.1/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 contract PositionalMarketManager is Initializable, ProxyOwned, ProxyPausable, IPositionalMarketManager {
     /* ========== LIBRARIES ========== */
+
+    using SafeERC20Upgradeable for IERC20Upgradeable;
 
     using SafeMath for uint;
     using AddressSetLib for AddressSetLib.AddressSet;
@@ -56,7 +61,7 @@ contract PositionalMarketManager is Initializable, ProxyOwned, ProxyPausable, IP
     PositionalMarketManager internal _migratingManager;
 
     IPriceFeed public priceFeed;
-    IERC20 public sUSD;
+    IERC20Upgradeable public sUSD;
 
     address public positionalMarketFactory;
 
@@ -64,7 +69,7 @@ contract PositionalMarketManager is Initializable, ProxyOwned, ProxyPausable, IP
 
     function initialize(
         address _owner,
-        IERC20 _sUSD,
+        IERC20Upgradeable _sUSD,
         IPriceFeed _priceFeed,
         uint _expiryDuration,
         uint _maxTimeToMaturity,
@@ -183,7 +188,7 @@ contract PositionalMarketManager is Initializable, ProxyOwned, ProxyPausable, IP
     }
 
     function setsUSD(address _address) external onlyOwner {
-        sUSD = IERC20(_address);
+        sUSD = IERC20Upgradeable(_address);
         emit SetsUSD(_address);
     }
 
@@ -240,26 +245,27 @@ contract PositionalMarketManager is Initializable, ProxyOwned, ProxyPausable, IP
 
         require(capitalRequirement <= initialMint, "Insufficient capital");
 
-        PositionalMarket market = PositionalMarketFactory(positionalMarketFactory).createMarket(
-            PositionalMarketFactory.PositionCreationMarketParameters(
-                msg.sender,
-                sUSD,
-                priceFeed,
-                oracleKey,
-                strikePrice,
-                [maturity, expiry],
-                initialMint,
-                customMarket,
-                customOracle
-            )
-        );
+        PositionalMarket market =
+            PositionalMarketFactory(positionalMarketFactory).createMarket(
+                PositionalMarketFactory.PositionCreationMarketParameters(
+                    msg.sender,
+                    sUSD,
+                    priceFeed,
+                    oracleKey,
+                    strikePrice,
+                    [maturity, expiry],
+                    initialMint,
+                    customMarket,
+                    customOracle
+                )
+            );
 
         _activeMarkets.add(address(market));
 
         // The debt can't be incremented in the new market's constructor because until construction is complete,
         // the manager doesn't know its address in order to grant it permission.
         totalDeposited = totalDeposited.add(initialMint);
-        sUSD.transferFrom(msg.sender, address(market), initialMint);
+        sUSD.safeTransferFrom(msg.sender, address(market), initialMint);
 
         (IPosition up, IPosition down) = market.getOptions();
 
